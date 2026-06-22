@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTeM Graduate Digital Portfolio - HCI Prototype</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Space Grotesk -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for interactive analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti for satisfying interactions -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Tailwind Custom Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        utem: {
+                            blue: '#0F2C59',
+                            red: '#8C1D40',
+                            gold: '#DAC0A3',
+                            cream: '#EADBC8'
+                        },
+                        brand: {
+                            primary: '#4F46E5', /* Indigo-600 */
+                            secondary: '#06B6D4', /* Cyan-500 */
+                            accent: '#F59E0B' /* Amber-500 */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom Styling for Interactive Elements -->
+    <style>
+        .page-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .active-nav-item {
+            position: relative;
+        }
+        .active-nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, #4F46E5, #06B6D4);
+            border-radius: 9999px;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.1);
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.9);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(79, 70, 229, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 70, 229, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white transition-colors duration-300">
+
+    <script>
+        // Web Audio Context for UX Micro-Interactions (Fitts's Law feedback & Button Clicks)
+        let audioCtx = null;
+        function playUIPing(frequency = 600, duration = 0.08, type = 'sine') {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+                
+                gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.log('Audio Context failed to initialize: ', e);
+            }
+        }
+        
+        // Success Chime for form submissions or achievements
+        function playSuccessChime() {
+            setTimeout(() => playUIPing(523.25, 0.15, 'triangle'), 0); // C5
+            setTimeout(() => playUIPing(659.25, 0.15, 'triangle'), 80); // E5
+            setTimeout(() => playUIPing(783.99, 0.25, 'triangle'), 160); // G5
+        }
+    </script>
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand & Logo -->
+                <div class="flex items-center gap-3">
+                    <a href="#home" onclick="navigateToPage('home'); playUIPing(400);" class="flex items-center gap-2 font-display font-bold text-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 bg-clip-text text-transparent hover:scale-105 transition-transform duration-200">
+                        <i class="fa-solid fa-graduation-cap text-indigo-600 dark:text-indigo-400"></i>
+                        <span>Aidil_UTeM</span>
+                    </a>
+                    <span class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300 border border-red-200 dark:border-red-900/50">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
+                        UTeM Graduate
+                    </span>
+                </div>
+
+                <!-- Desktop Navigation Items (6 distinct pages) -->
+                <nav class="hidden lg:flex space-x-1 items-center">
+                    <button onclick="navigateToPage('home'); playUIPing(500);" id="nav-home" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:text-indigo-600 dark:hover:text-indigo-400 active-nav-item transition-all">Home</button>
+                    <button onclick="navigateToPage('about'); playUIPing(500);" id="nav-about" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:text-indigo-600 dark:hover:text-indigo-400 transition-all">About & Qualities</button>
+                    <button onclick="navigateToPage('academic'); playUIPing(500);" id="nav-academic" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:text-indigo-600 dark:hover:text-indigo-400 transition-all">Academic Journey</button>
+                    <button onclick="navigateToPage('projects'); playUIPing(500);" id="nav-projects" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:text-indigo-600 dark:hover:text-indigo-400 transition-all">Works / Projects</button>
+                    <button onclick="navigateToPage('hci-lab'); playUIPing(500);" id="nav-hci-lab" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-flask animate-bounce"></i> HCI Lab
+                    </button>
+                    <button onclick="navigateToPage('contact'); playUIPing(500);" id="nav-contact" class="nav-btn px-3 py-2 rounded-md text-sm font-medium hover:text-indigo-600 dark:hover:text-indigo-400 transition-all">Contact / Guestbook</button>
+                </nav>
+
+                <!-- Action Utilities (Dark Theme Toggle, Accessibility font size slider, Mobile Menu) -->
+                <div class="flex items-center gap-4">
+                    <!-- Accessibility Adjustments Panel -->
+                    <div class="relative group">
+                        <button class="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" title="Accessibility Panel">
+                            <i class="fa-solid fa-universal-access text-lg"></i>
+                        </button>
+                        <div class="absolute right-0 top-12 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 hidden group-hover:block z-50">
+                            <h4 class="text-xs font-semibold text-slate-400 uppercase mb-2 tracking-wider">HCI Controls</h4>
+                            <div class="space-y-3 text-sm">
+                                <div>
+                                    <label class="block text-xs mb-1">Font Size Adjustment</label>
+                                    <input type="range" min="14" max="20" value="16" oninput="changeFontSize(this.value)" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="text-xs">UIPing Feedback</label>
+                                    <input type="checkbox" checked id="sound-toggle" class="w-4 h-4 text-indigo-600 rounded">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dark Mode Toggle -->
+                    <button onclick="toggleTheme(); playUIPing(700);" class="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-all" aria-label="Toggle Theme">
+                        <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button onclick="toggleMobileMenu(); playUIPing(600);" class="lg:hidden p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                        <i id="mobile-menu-icon" class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Dropdown Navigation -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-3 px-4 space-y-2">
+            <button onclick="navigateToPage('home'); toggleMobileMenu(); playUIPing(500);" class="mobile-nav-btn block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600">Home</button>
+            <button onclick="navigateToPage('about'); toggleMobileMenu(); playUIPing(500);" class="mobile-nav-btn block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600">About & Qualities</button>
+            <button onclick="navigateToPage('academic'); toggleMobileMenu(); playUIPing(500);" class="mobile-nav-btn block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600">Academic Journey</button>
+            <button onclick="navigateToPage('projects'); toggleMobileMenu(); playUIPing(500);" class="mobile-nav-btn block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600">Works / Projects</button>
+            <button onclick="navigateToPage('hci-lab'); toggleMobileMenu(); playUIPing(500);" class="mobile-nav-btn block w-full text-left px-3 py-2 rounded-md text-base font-medium text-amber-500 hover:bg-indigo-50 dark:hover:bg-slate-800">HCI Lab Testbed</button>
+            <button onclick="navigateToPage('contact'); toggleMobileMenu(); playUIPing(500);" class="mobile-nav-btn block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600">Contact & Guestbook</button>
+        </div>
+    </header>
+
+    <!-- Main Content Containers (Dynamic Pages Showcase) -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-all duration-300">
+        
+        <!-- PAGE 1: HOME PAGE -->
+        <section id="page-home" class="page-transition space-y-16 py-4">
+            <!-- Hero Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <!-- Textual pitch -->
+                <div class="lg:col-span-7 space-y-6">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/50">
+                        🎓 Open for Internship & Job Offers (Nov 2026)
+                    </span>
+                    <h1 class="text-4xl sm:text-6xl font-display font-extrabold tracking-tight">
+                        Crafting High-Fidelity <br>
+                        <span class="bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">Digital Experiences</span>
+                    </h1>
+                    <p class="text-lg text-slate-600 dark:text-slate-300 max-w-2xl">
+                        Hi, I'm <strong class="text-indigo-600 dark:text-indigo-400 font-semibold">Aidil Iskandar</strong>, a Computer Security major at UTeM <strong class="underline decoration-indigo-500 decoration-wavy">UTeM</strong>. Specializing in analyzing vulnerabilities, securing network architectures, and understanding the human and technical elements of information security.</p>
+                    <!-- CTA Buttons (Fitts's Law Optimized Target Sizes) -->
+                    <div class="flex flex-wrap gap-4 pt-2">
+                        <button onclick="navigateToPage('projects'); playSuccessChime();" class="px-8 py-4 bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/25 hover:shadow-cyan-500/30 transform hover:-translate-y-0.5 transition-all text-base min-w-[180px] text-center">
+                            Explore Works <i class="fa-solid fa-arrow-right ml-2 animate-pulse"></i>
+                        </button>
+                        <button onclick="navigateToPage('contact'); playUIPing(550);" class="px-8 py-4 bg-white hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl font-bold transition-all text-base min-w-[180px] text-center">
+                            Get In Touch <i class="fa-solid fa-paper-plane ml-2"></i>
+                        </button>
+                    </div>
+                    <!-- Quick contact summary details -->
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+                        <div>
+                            <span class="text-xs text-slate-400 block">EMAIL ADDRESS</span>
+                            <a href="mailto:muhddil365@gmail.com" class="text-sm font-semibold hover:text-indigo-500 transition-colors">b152510294@student.utem.edu.my</a>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-400 block">CURRENT CITY</span>
+                            <span class="text-sm font-semibold">Durian Tunggal, Melaka</span>
+                        </div>
+                        <div class="col-span-2 md:col-span-1">
+                            <span class="text-xs text-slate-400 block">FACULTY</span>
+                            <span class="text-sm font-semibold">FAIX, UTeM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graphic Showcase with Interactive Badge -->
+                <div class="lg:col-span-5 relative flex justify-center">
+                    <div class="relative w-80 h-80 sm:w-96 sm:h-96 rounded-3xl overflow-hidden bg-gradient-to-tr from-indigo-500 to-cyan-500 p-1.5 shadow-2xl">
+                        <!-- Profile/Mock Photo with interactive placeholder -->
+                        <div class="w-full h-full bg-slate-900 rounded-[22px] overflow-hidden relative group">
+                            <img src="my_face.jpg"
+                                 alt="Aidil ISkandar Profile Mock" 
+                                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                 onerror="this.src='https://placehold.co/400x400/0F2C59/EADBC8?text=Ahmad+Farhan'">
+                            <!-- Glassmorphism interactive chip overlay (HCI visual feedback) -->
+                            <div class="absolute bottom-4 left-4 right-4 backdrop-blur-md bg-black/40 border border-white/10 p-4 rounded-xl text-white text-center">
+                                <span class="font-display font-bold block text-sm">Muhammad Aidil Iskandar Osman</span>
+                                <span class="text-xs text-cyan-300">Computer Security Student / Audio Enthusiast</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Absolute Decorative Elements -->
+                    <div class="absolute -top-6 -right-6 w-16 h-16 bg-amber-500 rounded-full mix-blend-screen filter blur-lg opacity-40 animate-pulse"></div>
+                    <div class="absolute -bottom-6 -left-6 w-24 h-24 bg-indigo-500 rounded-full mix-blend-screen filter blur-lg opacity-40 animate-pulse"></div>
+                </div>
+            </div>
+
+            <!-- Value Highlights Metrics Section -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-md">
+                <div class="text-center md:text-left space-y-1">
+                    <h3 class="text-4xl font-display font-extrabold text-indigo-600 dark:text-indigo-400">3.88</h3>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest">UTeM Cumulative CGPA</p>
+                    <p class="text-sm text-slate-500">First Class Honors Track</p>
+                </div>
+                <div class="text-center md:text-left space-y-1 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-800 pt-4 md:pt-0 md:pl-6">
+                    <h3 class="text-4xl font-display font-extrabold text-cyan-500">12+</h3>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Completed Systems & Apps</p>
+                    <p class="text-sm text-slate-500">Includes 4 Academic & 8 Freelance</p>
+                </div>
+                <div class="text-center md:text-left space-y-1 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-800 pt-4 md:pt-0 md:pl-6">
+                    <h3 class="text-4xl font-display font-extrabold text-amber-500">20+</h3>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest">HCI Principles Leveraged</p>
+                    <p class="text-sm text-slate-500">Accessibility, Fitts, Gestalt, etc.</p>
+                </div>
+                <div class="text-center md:text-left space-y-1 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-800 pt-4 md:pt-0 md:pl-6">
+                    <h3 class="text-4xl font-display font-extrabold text-emerald-500">100%</h3>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Commitment to Quality</p>
+                    <p class="text-sm text-slate-500">Tailored UI/UX and stable codebases</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 2: ABOUT ME & PERSONAL QUALITIES -->
+        <section id="page-about" class="page-transition hidden space-y-12 py-4">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-5">
+                <h2 class="text-3xl font-display font-extrabold">Who I Am & Personal Qualities</h2>
+                <p class="text-slate-500">A detailed exploration of my capabilities, philosophy, soft skills, and tech competencies.</p>
+            </div>
+
+            <!-- Grid Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Left Details (Philosophy and qualities cards) -->
+                <div class="lg:col-span-7 space-y-6">
+                    <h3 class="text-xl font-bold font-display flex items-center gap-2">
+                        <i class="fa-solid fa-circle-user text-indigo-500"></i> My Cybersecurity Journey
+                    </h3>
+                    <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+                        As a Computer Security undergraduate at Universiti Teknikal Malaysia Melaka (UTeM), I am passionate about cybersecurity and information security. My areas of interest include Network Security, Ethical Hacking, Penetration Testing, Digital Forensics, Malware Analysis, Cloud Security, and Governance, Risk & Compliance (GRC).
+
+I continuously improve my technical knowledge through hands-on practice using virtual lab environments and cybersecurity tools. My goal is to build a strong foundation for a future career as a SOC Analyst or Penetration Tester.
+                    </p>
+
+                    <!-- Core Personal Qualities Icons Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex gap-4 items-start hover:shadow-md transition-all">
+                            <span class="p-3 bg-indigo-50 dark:bg-indigo-950/50 rounded-xl text-indigo-500"><i class="fa-solid fa-puzzle-piece text-xl"></i></span>
+                            <div>
+                                <h4 class="font-bold text-sm">Security-Minded Problem Solver</h4>
+                                <p class="text-xs text-slate-500 mt-1">Enjoys identifying vulnerabilities, analysing risks, and developing practical security solutions.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex gap-4 items-start hover:shadow-md transition-all">
+                            <span class="p-3 bg-cyan-50 dark:bg-cyan-950/50 rounded-xl text-cyan-500"><i class="fa-solid fa-users text-xl"></i></span>
+                            <div>
+                                <h4 class="font-bold text-sm">Effective Team Player</h4>
+                                <p class="text-xs text-slate-500 mt-1">Able to communicate and collaborate effectively in academic projects, technical activities, and university programs.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex gap-4 items-start hover:shadow-md transition-all">
+                            <span class="p-3 bg-amber-50 dark:bg-amber-950/50 rounded-xl text-amber-500"><i class="fa-solid fa-bolt text-xl"></i></span>
+                            <div>
+                                <h4 class="font-bold text-sm">Highly Adaptable & Fast Learner</h4>
+                                <p class="text-xs text-slate-500 mt-1">Comfortable traversing diverse frameworks and picking up novel industry methodologies swiftly.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex gap-4 items-start hover:shadow-md transition-all">
+                            <span class="p-3 bg-emerald-50 dark:bg-emerald-950/50 rounded-xl text-emerald-500"><i class="fa-solid fa-crosshairs text-xl"></i></span>
+                            <div>
+                                <h4 class="font-bold text-sm">UX-Obsessed & Goal-Oriented</h4>
+                                <p class="text-xs text-slate-500 mt-1">Focusing heavily on pixel perfection, user heuristics, and accessible dark/light accessibility scales.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Details (Interactive skill visualization using ChartJS or beautiful meters) -->
+                <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-6 shadow-sm">
+                    <h3 class="text-lg font-bold font-display text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-gears text-indigo-500 animate-spin"></i> Technical & Design Aptitudes
+                    </h3>
+
+                    <!-- Skills Slider bars -->
+                    <div class="space-y-4 text-sm">
+                        <!-- Skill item -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between font-semibold">
+                                <span class="text-slate-700 dark:text-slate-300">Network Security</span>
+                                <span class="text-indigo-600 dark:text-indigo-400">92%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-full rounded-full w-[92%]"></div>
+                            </div>
+                        </div>
+
+                        <!-- Skill item -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between font-semibold">
+                                <span class="text-slate-700 dark:text-slate-300">Cisco Packet Tracer</span>
+                                <span class="text-cyan-500">85%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-cyan-400 to-cyan-500 h-full rounded-full w-[85%]"></div>
+                            </div>
+                        </div>
+
+                        <!-- Skill item -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between font-semibold">
+                                <span class="text-slate-700 dark:text-slate-300">HCI Usability Principles & Testing</span>
+                                <span class="text-amber-500">95%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-amber-400 to-amber-500 h-full rounded-full w-[95%]"></div>
+                            </div>
+                        </div>
+
+                        <!-- Skill item -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between font-semibold">
+                                <span class="text-slate-700 dark:text-slate-300">UI/UX Layout Tools (Figma, Adobe XD)</span>
+                                <span class="text-purple-500">88%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-purple-400 to-purple-500 h-full rounded-full w-[88%]"></div>
+                            </div>
+                        </div>
+
+                        <!-- Skill item -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between font-semibold">
+                                <span class="text-slate-700 dark:text-slate-300">Git & Collaborative Pipelines</span>
+                                <span class="text-emerald-500">80%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-full w-[80%]"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Languages/Certifications checklist -->
+                    <div class="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                        <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider">Languages & Certs</span>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            <span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 font-semibold">Malay (Native)</span>
+                            <span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 font-semibold">English (MUET Band 5)</span>
+                            <span class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg text-indigo-600 dark:text-indigo-400 font-semibold">HCI Usability Certified</span>
+                            <span class="px-2.5 py-1 bg-cyan-50 dark:bg-cyan-950/40 rounded-lg text-cyan-600 dark:text-cyan-400 font-semibold">AWS Cloud Foundations</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 3: ACADEMIC HISTORY -->
+        <section id="page-academic" class="page-transition hidden space-y-12 py-4">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-5">
+                <h2 class="text-3xl font-display font-extrabold">My Academic Journey</h2>
+                <p class="text-slate-500">Qualifications, grades, courses, and educational institutions path.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- Academic History Timeline (Left) -->
+                <div class="lg:col-span-7 space-y-8">
+                    <!-- Timeline container -->
+                    <div class="relative border-l-2 border-indigo-200 dark:border-indigo-900 pl-6 ml-4 space-y-10">
+                        
+                        <!-- Timeline Item 1: UTeM -->
+                        <div class="relative">
+                            <!-- Bullet marker -->
+                            <span class="absolute -left-[35px] top-1.5 w-6 h-6 rounded-full bg-indigo-600 dark:bg-indigo-500 border-4 border-slate-50 dark:border-slate-950 flex items-center justify-center">
+                                <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                            </span>
+                            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative group hover:border-indigo-500 transition-colors">
+                                <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 block mb-1">2023 - PRESENT</span>
+                                <h3 class="font-display font-extrabold text-lg">Universiti Teknikal Malaysia Melaka (UTeM)</h3>
+                                <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">Bachelor of Computer Science (Software Development) with Honors</p>
+                                <div class="mt-4 flex flex-wrap gap-1.5">
+                                    <span class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">HCI Specialist</span>
+                                    <span class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Data Structures</span>
+                                    <span class="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">Kali Linux</span>
+                                </div>
+                                <div class="mt-3 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-bold">
+                                    <i class="fa-solid fa-medal"></i> Academic Excellence Dean's List (All Semesters)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Item 2: Matriculation -->
+                        <div class="relative">
+                            <!-- Bullet marker -->
+                            <span class="absolute -left-[35px] top-1.5 w-6 h-6 rounded-full bg-cyan-500 border-4 border-slate-50 dark:border-slate-950 flex items-center justify-center">
+                                <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                            </span>
+                            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative group hover:border-cyan-500 transition-colors">
+                                <span class="text-xs font-bold text-cyan-500 block mb-1">2020 - 2023</span>
+                                <h3 class="font-display font-extrabold text-lg">Perlis Matriculation College</h3>
+                                <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">Foundation in Pysical Science</p>
+                                <p class="text-xs text-slate-400 mt-2">Acquired structural logic basis, relational algebraic matrices, and foundational Python scripting techniques.</p>
+                                <div class="mt-3 text-xs text-slate-500">CGPA: <strong class="text-slate-700 dark:text-slate-300 font-bold">3.67 / 4.00</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Item 3: Secondary School -->
+                        <div class="relative">
+                            <!-- Bullet marker -->
+                            <span class="absolute -left-[35px] top-1.5 w-6 h-6 rounded-full bg-slate-400 border-4 border-slate-50 dark:border-slate-950 flex items-center justify-center">
+                                <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                            </span>
+                            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative group hover:border-slate-500 transition-colors">
+                                <span class="text-xs font-bold text-slate-400 block mb-1">2015 - 2019</span>
+                                <h3 class="font-display font-extrabold text-lg">SMKA Al Mashoor (Lelaki)</h3>
+                                <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">SPM (Science Stream )</p>
+                                <p class="text-xs text-slate-400 mt-2">Excelled in Mathematics, Physics and  Computer Science.</p>
+                                <div class="mt-3 text-xs text-slate-500">SPM Results: <strong class="text-slate-700 dark:text-slate-300 font-bold">6As</strong></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Academic Interactive Analytics (Right) -->
+                <div class="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-6 shadow-sm">
+                    <h3 class="text-lg font-bold font-display flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-indigo-500"></i> GPA Trend Analyzer
+                    </h3>
+                    <p class="text-xs text-slate-400">This interactive chart demonstrates consistency and academic diligence across my semesters of study.</p>
+
+                    <!-- Chart Container -->
+                    <div class="h-64 relative">
+                        <canvas id="gpaChart"></canvas>
+                    </div>
+
+                    <!-- GPA Overview List -->
+                    <div class="border-t border-slate-200 dark:border-slate-800 pt-4 space-y-3">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-500">Semester 1 GPA</span>
+                            <span class="font-bold">3.82</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-500">Semester 2 GPA</span>
+                            <span class="font-bold">3.86</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-500">Semester 3 GPA</span>
+                            <span class="font-bold">3.90</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-500">Semester 4 GPA (HCI Course Focus)</span>
+                            <span class="font-bold text-indigo-600 dark:text-indigo-400">3.95 ⭐</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm border-t border-slate-200 dark:border-slate-800 pt-2">
+                            <span class="font-semibold">Cumulative CGPA</span>
+                            <span class="font-extrabold text-slate-800 dark:text-white bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-900">3.88 / 4.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 4: PORTFOLIO WORKS PRODUCED -->
+        <section id="page-projects" class="page-transition hidden space-y-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-200 dark:border-slate-800 pb-5 gap-4">
+                <div>
+                    <h2 class="text-3xl font-display font-extrabold">Works Produced</h2>
+                    <p class="text-slate-500">Academic security labs, penetration testing reports, and independent cybersecurity client projects during my study at UTeM.</p>
+                </div>
+
+                <!-- Custom Interactive Filter Pills -->
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="filterProjects('all'); playUIPing(600);" id="filter-all" class="filter-pill px-4 py-2 text-xs font-bold rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-500/10 transition-all">All Projects</button>
+                    <button onclick="filterProjects('utem'); playUIPing(600);" id="filter-utem" class="filter-pill px-4 py-2 text-xs font-bold rounded-full bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all">UTeM Academic</button>
+                    <button onclick="filterProjects('freelance'); playUIPing(600);" id="filter-freelance" class="filter-pill px-4 py-2 text-xs font-bold rounded-full bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all">Freelance</button>
+                </div>
+            </div>
+
+            <!-- Portfolio Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Project Card 1: FAIX Mock Infrastructure Penetration Testing -->
+                <div class="project-card bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all flex flex-col hover:shadow-lg hover:-translate-y-1 duration-300" data-category="utem">
+                    <div class="h-44 bg-slate-100 dark:bg-slate-800 relative">
+                        <img src="https://placehold.co/600x400/0f172a/6366f1?text=FAIX+Vulnerability+Assessment" alt="Facility Booking Image" class="w-full h-full object-cover">
+                        <span class="absolute top-3 right-3 text-[10px] font-extrabold bg-indigo-600 text-white px-2.5 py-1 rounded-full uppercase tracking-wider">UTeM Academic</span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col justify-between space-y-4">
+                        <div class="space-y-2">
+                            <h3 class="font-display font-bold text-lg leading-tight">FAIX Mock Infrastructure Penetration Testing</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-3">
+                                Comprehensive security assessment and black-box penetration test conducted on internal mock lab networks, discovering and documenting critical OWASP Top 10 vulnerabilities.
+                            </p>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex flex-wrap gap-1">
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Metasploit</span>
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Wireshark</span>
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Burp Suite</span>
+                            </div>
+                            <button onclick="openProjectModal(1); playSuccessChime();" class="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                                View Technical Specifications <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Card 2: Melaka SME Network Hardening & Security Audit -->
+                <div class="project-card bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all flex flex-col hover:shadow-lg hover:-translate-y-1 duration-300" data-category="freelance">
+                    <div class="h-44 bg-slate-100 dark:bg-slate-800 relative">
+                        <img src="https://placehold.co/600x400/0f172a/06b6d4?text=Network+Hardening+Audit" alt="Melaka Tourism app mockup" class="w-full h-full object-cover">
+                        <span class="absolute top-3 right-3 text-[10px] font-extrabold bg-cyan-500 text-white px-2.5 py-1 rounded-full uppercase tracking-wider">Freelance Project</span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col justify-between space-y-4">
+                        <div class="space-y-2">
+                            <h3 class="font-display font-bold text-lg leading-tight">Melaka Heritage Digital Guide & Navigation</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-3">
+                                Independent security consultation for a localized client, delivering secure firewall deployments, network segmentation, and active vulnerability sweeps to mitigate unauthorized access points.
+                            </p>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex flex-wrap gap-1">
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Network Security</span>
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Kali Linux</span>
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Nmap</span>
+                            </div>
+                            <button onclick="openProjectModal(2); playSuccessChime();" class="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                                View Technical Specifications <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Card 3: Automated Malware Analysis Sandbox Engine -->
+                <div class="project-card bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all flex flex-col hover:shadow-lg hover:-translate-y-1 duration-300" data-category="utem">
+                    <div class="h-44 bg-slate-100 dark:bg-slate-800 relative">
+                        <img src="https://placehold.co/600x400/0f172a/f59e0b?text=Malware+Analysis+Sandbox" alt="HCI Toolkit visual mockup" class="w-full h-full object-cover">
+                        <span class="absolute top-3 right-3 text-[10px] font-extrabold bg-indigo-600 text-white px-2.5 py-1 rounded-full uppercase tracking-wider">UTeM Academic</span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col justify-between space-y-4">
+                        <div class="space-y-2">
+                            <h3 class="font-display font-bold text-lg leading-tight">Automated UI Heuristic Testing Engine</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-3">
+                               A tailored dynamic validation environment designed to execute untrusted binaries safely, parsing runtime system calls, registry modifications, and network indicators for threat intelligence reporting.
+ </p>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex flex-wrap gap-1">
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Python</span>
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">YARA Rules</span>
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Procmon</span>
+                            </div>
+                            <button onclick="openProjectModal(3); playSuccessChime();" class="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                                View Technical Specifications <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Card 4: Hardened Cloud Infrastructure & API Gateway -->
+                <div class="project-card bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all flex flex-col hover:shadow-lg hover:-translate-y-1 duration-300" data-category="freelance">
+                    <div class="h-44 bg-slate-100 dark:bg-slate-800 relative">
+                        <img src="https://placehold.co/600x400/0f172a/10b981?text=Secure+Cloud+Infrastructure" alt="Agrocommerce visual placeholder" class="w-full h-full object-cover">
+                        <span class="absolute top-3 right-3 text-[10px] font-extrabold bg-cyan-500 text-white px-2.5 py-1 rounded-full uppercase tracking-wider">Freelance Project</span>
+                    </div>
+                    <div class="p-6 flex-grow flex flex-col justify-between space-y-4">
+                        <div class="space-y-2">
+                            <h3 class="font-display font-bold text-lg leading-tight">UTem AgroSains E-Marketplace API</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-3">
+                                Production-grade secure deployment featuring strict container segmentation, automated secret rotations, reverse proxies, and rate-limiting rules optimized to block DDoS and injection vectors.
+                            </p>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex flex-wrap gap-1">
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Cloud Security</span>
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Docker</span>
+                                <span class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded">Linux Hardening</span>
+                            </div>
+                            <button onclick="openProjectModal(4); playSuccessChime();" class="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                                View Technical Specifications <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 5: DYNAMIC HCI LAB (ADDED VALUE) -->
+        <section id="page-hci-lab" class="page-transition hidden space-y-8 py-4">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-5">
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center p-2 bg-amber-500/10 rounded-lg text-amber-500">
+                        <i class="fa-solid fa-vial-circle-check text-2xl"></i>
+                    </span>
+                    <div>
+                        <h2 class="text-3xl font-display font-extrabold">HCI interactive Playground & Lab</h2>
+                        <p class="text-slate-500">A customized sandbox verifying theoretical understandings of core Human-Computer Interaction topics.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- LAB PART 1: Fitts's Law Interactive Target Clicker Benchmark -->
+                <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-6 shadow-sm">
+                    <div class="space-y-2">
+                        <h3 class="text-lg font-bold font-display flex items-center justify-between">
+                            <span>🧪 Test 1: Fitts's Law Target Benchmarking</span>
+                            <span class="text-xs font-mono px-2 py-1 bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 rounded">HCI Rule: T = a + b * log2(2D/W)</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            Fitts's Law states that target selection speed depends on distance (D) and size (W). Larger, closer targets reduce error and increase speed. Click the target as quickly as possible inside the test box below as it spawns.
+                        </p>
+                    </div>
+
+                    <!-- Sandbox Game Frame -->
+                    <div class="relative bg-slate-50 dark:bg-slate-950 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl h-80 overflow-hidden flex items-center justify-center" id="fitts-sandbox">
+                        <!-- Play state controls -->
+                        <div id="fitts-intro" class="text-center p-4 space-y-4">
+                            <p class="text-sm font-semibold text-slate-600 dark:text-slate-400">Clicking start launches 10 fast-target iterations to measure your motor throughput index!</p>
+                            <button onclick="startFittsBenchmark(); playSuccessChime();" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-amber-500/15">
+                                Initialize Motor Test
+                            </button>
+                        </div>
+
+                        <!-- Active Target -->
+                        <button id="fitts-target" onclick="registerFittsHit();" class="hidden absolute rounded-full bg-gradient-to-r from-amber-500 to-red-500 shadow-md transform hover:scale-110 active:scale-90 transition-transform flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <i class="fa-solid fa-crosshairs text-white pointer-events-none"></i>
+                        </button>
+
+                        <!-- Finished state dashboard feedback -->
+                        <div id="fitts-results" class="hidden text-center p-6 space-y-4 max-w-sm">
+                            <h4 class="font-display font-bold text-lg text-emerald-500 flex items-center justify-center gap-1.5">
+                                <i class="fa-regular fa-circle-check"></i> Analysis Success
+                            </h4>
+                            <div class="grid grid-cols-2 gap-3 text-xs">
+                                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-lg">
+                                    <span class="text-slate-400 block">Avg. Reaction Time</span>
+                                    <span class="text-sm font-extrabold text-indigo-500" id="fitts-result-speed">-- ms</span>
+                                </div>
+                                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-lg">
+                                    <span class="text-slate-400 block">Throughput Rate</span>
+                                    <span class="text-sm font-extrabold text-cyan-500" id="fitts-result-throughput">-- bits/s</span>
+                                </div>
+                            </div>
+                            <p class="text-[11px] text-slate-500">Great job! The data demonstrates that your selection speed scales strictly logarithmically according to visual index difficulties.</p>
+                            <button onclick="resetFittsBenchmark(); playUIPing(600);" class="px-4 py-2 text-xs bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300">
+                                Try Benchmarking Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LAB PART 2: Live Accessibility WCAG Contrast audit tool -->
+                <div class="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-6 shadow-sm flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <div class="space-y-1">
+                            <h3 class="text-lg font-bold font-display">📐 Test 2: WCAG Color Contrast Checker</h3>
+                            <p class="text-xs text-slate-500">HCI Rule: WCAG AA conformance requires high luminosity ratios (4.5:1 minimum) to aid vision-impaired interaction.</p>
+                        </div>
+
+                        <!-- Live Interactive Palette Customizer -->
+                        <div class="space-y-4 pt-2">
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-semibold text-slate-500 block">Text Foreground Color</label>
+                                <div class="flex items-center gap-3">
+                                    <input type="color" id="contrast-text" value="#4F46E5" oninput="auditContrast()" class="w-10 h-10 border-0 rounded-md cursor-pointer">
+                                    <span class="text-xs font-mono" id="contrast-text-hex">#4F46E5</span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-semibold text-slate-500 block">Card Background Color</label>
+                                <div class="flex items-center gap-3">
+                                    <input type="color" id="contrast-bg" value="#F1F5F9" oninput="auditContrast()" class="w-10 h-10 border-0 rounded-md cursor-pointer">
+                                    <span class="text-xs font-mono" id="contrast-bg-hex">#F1F5F9</span>
+                                </div>
+                            </div>
+
+                            <!-- Realtime visual mock layout -->
+                            <div class="p-4 rounded-xl text-center border font-bold text-sm" id="contrast-preview">
+                                Live Contrast Audit View
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audit Feedback status display -->
+                    <div class="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-400">Calculated Contrast Ratio:</span>
+                            <span class="font-extrabold text-sm" id="contrast-ratio-value">4.5 : 1</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs">WCAG Level AA:</span>
+                            <span id="contrast-status-aa" class="px-2 py-0.5 rounded text-[10px] font-bold">PASS</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs">WCAG Level AAA (7:1+):</span>
+                            <span id="contrast-status-aaa" class="px-2 py-0.5 rounded text-[10px] font-bold">FAIL</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LAB PART 3: Gestalt Principles Visualizer -->
+                <div class="lg:col-span-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-6 shadow-sm">
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-bold font-display">🧩 Test 3: Gestalt Perception Principles</h3>
+                        <p class="text-xs text-slate-500">Gestalt describes how human vision naturally groups scattered nodes based on design similarities and proximities.</p>
+                    </div>
+
+                    <!-- Sandbox interactive toggles -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                        <!-- Law of Proximity -->
+                        <div class="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-bold">1. Law of Proximity</h4>
+                                <button onclick="toggleGestaltProximity(); playUIPing(650);" class="text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 px-2.5 py-1 rounded">Shift Grouping</button>
+                            </div>
+                            <p class="text-xs text-slate-500">Things close to each other are perceived as grouped.</p>
+                            <!-- Proximity Visual sandbox -->
+                            <div class="h-28 flex items-center justify-center bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+                                <div id="gestalt-proximity-container" class="flex gap-2 transition-all duration-300">
+                                    <span class="w-4 h-4 bg-indigo-500 rounded-full"></span>
+                                    <span class="w-4 h-4 bg-indigo-500 rounded-full"></span>
+                                    <span class="w-4 h-4 bg-indigo-500 rounded-full mr-6"></span>
+                                    <span class="w-4 h-4 bg-indigo-500 rounded-full"></span>
+                                    <span class="w-4 h-4 bg-indigo-500 rounded-full"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Law of Similarity -->
+                        <div class="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-bold">2. Law of Similarity</h4>
+                                <button onclick="toggleGestaltSimilarity(); playUIPing(650);" class="text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 px-2.5 py-1 rounded">Alter Color</button>
+                            </div>
+                            <p class="text-xs text-slate-500">Elements sharing visual properties look related.</p>
+                            <!-- Similarity Visual sandbox -->
+                            <div class="h-28 flex items-center justify-center bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+                                <div id="gestalt-similarity-container" class="grid grid-cols-4 gap-3">
+                                    <span class="w-4 h-4 bg-cyan-500 rounded-full"></span>
+                                    <span class="w-4 h-4 bg-slate-300 rounded-full"></span>
+                                    <span class="w-4 h-4 bg-cyan-500 rounded-full"></span>
+                                    <span class="w-4 h-4 bg-slate-300 rounded-full"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Law of Closure -->
+                        <div class="bg-slate-50 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-bold">3. Law of Closure</h4>
+                                <button onclick="toggleGestaltClosure(); playUIPing(650);" class="text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 px-2.5 py-1 rounded">Draw Boundary</button>
+                            </div>
+                            <p class="text-xs text-slate-500">Our brains automatically fill in missing spaces.</p>
+                            <!-- Closure Visual sandbox -->
+                            <div class="h-28 flex items-center justify-center bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+                                <div id="gestalt-closure-box" class="w-16 h-16 border-4 border-dashed border-indigo-500 rounded-lg relative flex items-center justify-center">
+                                    <span class="text-[9px] font-bold uppercase text-indigo-500 tracking-wider">Mind-Closed Square</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- PAGE 6: CONTACT & INTERACTIVE GUESTBOOK -->
+        <section id="page-contact" class="page-transition hidden space-y-12 py-4">
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-5">
+                <h2 class="text-3xl font-display font-extrabold">Contact Aidil & Digital Guestbook</h2>
+                <p class="text-slate-500">Initiate hiring inquiries, scheduling an internship, or signing my interactive guestbook.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- Contact Details Card (Left) -->
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl space-y-6 shadow-sm">
+                        <h3 class="text-lg font-bold font-display">Direct Coordination Details</h3>
+                        
+                        <div class="space-y-4 text-sm">
+                            <div class="flex items-center gap-3">
+                                <span class="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-indigo-500"><i class="fa-solid fa-envelope"></i></span>
+                                <div>
+                                    <span class="text-xs text-slate-400 block">EMAIL ADDRESS</span>
+                                    <a href="mailto:b152510294@student.utem.edu.my" class="font-semibold hover:underline">b152510294@student.utem.edu.my</a>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <span class="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-indigo-500"><i class="fa-solid fa-phone"></i></span>
+                                <div>
+                                    <span class="text-xs text-slate-400 block">CONTACT TELEPHONE</span>
+                                    <span class="font-semibold">+60 11-6701 6913</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <span class="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-indigo-500"><i class="fa-solid fa-location-dot"></i></span>
+                                <div>
+                                    <span class="text-xs text-slate-400 block">OFFICE LOCALE</span>
+                                    <span class="font-semibold">FAIX, UTeM Main Campus, Melaka</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Social coordinates links -->
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex gap-3">
+                            <a href="https://linkedin.com" target="_blank" class="p-3 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-indigo-500 hover:text-white transition-all text-center flex-1">
+                                <i class="fa-brands fa-linkedin text-lg"></i>
+                            </a>
+                            <a href="https://github.com" target="_blank" class="p-3 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-800 hover:text-white transition-all text-center flex-1">
+                                <i class="fa-brands fa-github text-lg"></i>
+                            </a>
+                            <button onclick="copyEmailToClipboard();" class="p-3 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-cyan-500 hover:text-white transition-all text-center flex-1" title="Copy Email">
+                                <i class="fa-solid fa-copy text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Melaka mockup map coordinate -->
+                    <div class="bg-slate-100 dark:bg-slate-900 h-44 rounded-2xl overflow-hidden relative border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+                        <img src="https://placehold.co/400x200/0f172a/1e1b4b?text=UTeM+Campus+Map%0ADurian+Tunggal+Melaka" alt="UTeM Map placement" class="w-full h-full object-cover">
+                        <span class="absolute bottom-2 right-2 text-[10px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded">UTeM Melaka</span>
+                    </div>
+                </div>
+
+                <!-- Live Guestbook Component Form (Right) -->
+                <div class="lg:col-span-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-6 shadow-sm">
+                    <h3 class="text-lg font-bold font-display flex items-center gap-2">
+                        <i class="fa-solid fa-book-open text-indigo-500"></i> Interactive Portfolio Guestbook
+                    </h3>
+                    <p class="text-xs text-slate-500">Sign your feedback, job proposals, or comments into this live digital ledger interface. Written responses immediately render on the review board below.</p>
+
+                    <form id="guestbookForm" onsubmit="submitGuestbookComment(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-xs font-semibold text-slate-500 block">Your Name</label>
+                                <input type="text" id="gb-name" required placeholder="Jane Doe" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none transition-all">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-semibold text-slate-500 block">Your Organization / Title</label>
+                                <input type="text" id="gb-org" placeholder="Intel Corp / Recruiter" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none transition-all">
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-slate-500 block">Message Body</label>
+                            <textarea id="gb-msg" required rows="4" placeholder="Great portfolio Aidil! Your HCI interactive sandbox is extremely unique." class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none transition-all"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full md:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-indigo-600/10">
+                            Submit Entry to Ledger <i class="fa-solid fa-feather-pointed ml-1"></i>
+                        </button>
+                    </form>
+
+                    <!-- Realtime comment feed list -->
+                    <div class="pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Global Guestbook Entries</h4>
+                        <div id="guestbook-feed" class="space-y-3">
+                            <!-- Populated dynamically via JS arrays -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Section with HCI Acknowledgements -->
+    <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 transition-colors duration-300 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:text-left">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-6 border-b border-slate-200 dark:border-slate-800 pb-8">
+                <div>
+                    <span class="font-display font-bold text-lg">Muhammad Aidil Iskandar Osman</span>
+                    <p class="text-sm text-slate-500 mt-1">Computer Security Undergraduate at Universiti Teknikal Malaysia Melaka (UTeM) with strong interests in Network Security, Ethical Hacking, Digital Forensics and Security Operations.</p>
+                </div>
+                <div class="flex gap-4 text-xs font-semibold text-slate-500">
+                    <button onclick="navigateToPage('home')" class="hover:text-indigo-500">Home</button>
+                    <button onclick="navigateToPage('about')" class="hover:text-indigo-500">About</button>
+                    <button onclick="navigateToPage('academic')" class="hover:text-indigo-500">Journey</button>
+                    <button onclick="navigateToPage('projects')" class="hover:text-indigo-500">Portfolio</button>
+                    <button onclick="navigateToPage('hci-lab')" class="hover:text-indigo-500">HCI Playground</button>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-center pt-8 gap-4 text-xs text-slate-400">
+                <p>© 2026 Muhammad Aidil Iskandar Osman Portfolio. Compiled for UTeM Graduation Evaluation. All rights reserved.</p>
+                <div class="flex items-center gap-1">
+                    <i class="fa-solid fa-accessible-icon text-indigo-500"></i>
+                  
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Technical Specifications Details Modal -->
+    <div id="project-modal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Modal overlay background -->
+            <div onclick="closeProjectModal(); playUIPing(400);" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
+
+            <!-- Modal positioning trick -->
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <!-- Modal contents box -->
+            <div class="inline-block align-bottom bg-white dark:bg-slate-900 rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-200 dark:border-slate-800">
+                <div class="p-6 space-y-4">
+                    <div class="flex items-start justify-between">
+                        <h3 id="modal-title" class="text-xl font-display font-extrabold text-slate-950 dark:text-white"></h3>
+                        <button onclick="closeProjectModal(); playUIPing(400);" class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+
+                    <img id="modal-image" src="" alt="Modal Visual Mockup" class="w-full h-48 object-cover rounded-xl border border-slate-200 dark:border-slate-800">
+
+                    <div class="space-y-2">
+                        <span class="text-xs font-semibold text-slate-400 block uppercase tracking-widest">HCI Implementation Approach</span>
+                        <p id="modal-hci-description" class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed"></p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <span class="text-xs font-semibold text-slate-400 block uppercase tracking-widest">Technical Architecture</span>
+                        <p id="modal-tech-description" class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed"></p>
+                    </div>
+
+                    <!-- Close/CTA -->
+                    <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+                        <button onclick="closeProjectModal(); playUIPing(400);" class="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 rounded-xl text-xs font-bold transition-all hover:bg-slate-200">
+                            Close Spec Window
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // System variables
+        let activePage = 'home';
+        let gpaChartObj = null;
+
+        // Routing / Navigation Mechanics (HCI Feedback Loop)
+        function navigateToPage(pageId) {
+            // Check if audio checkmark is active
+            const toggleAudio = document.getElementById('sound-toggle');
+            if(toggleAudio && toggleAudio.checked) {
+                playUIPing(550, 0.1, 'sine');
+            }
+
+            // Hide previous active page, show current target
+            document.querySelectorAll('main > section').forEach(el => {
+                el.classList.add('hidden');
+            });
+            const activeSec = document.getElementById(`page-${pageId}`);
+            if(activeSec) {
+                activeSec.classList.remove('hidden');
+                activePage = pageId;
+            }
+
+            // Sync Nav highlights
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active-nav-item');
+                btn.classList.remove('text-indigo-600', 'dark:text-indigo-400');
+            });
+            const activeNav = document.getElementById(`nav-${pageId}`);
+            if (activeNav) {
+                activeNav.classList.add('active-nav-item');
+                if (pageId !== 'hci-lab') {
+                    activeNav.classList.add('text-indigo-600', 'dark:text-indigo-400');
+                }
+            }
+
+            // Scroll to the top of the container immediately
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Initialize dynamic chart render if traversing academic section
+            if (pageId === 'academic') {
+                renderAcademicChart();
+            }
+        }
+
+        // Font Adjustment Logic (HCI accessibility)
+        function changeFontSize(val) {
+            document.body.style.fontSize = `${val}px`;
+        }
+
+        // Theme Toggle Mechanism
+        function toggleTheme() {
+            const doc = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (doc.classList.contains('dark')) {
+                doc.classList.remove('dark');
+                icon.className = 'fa-solid fa-sun text-lg';
+            } else {
+                doc.classList.add('dark');
+                icon.className = 'fa-solid fa-moon text-lg';
+            }
+        }
+
+        // Toggle Mobile Menu Drawer
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('mobile-menu-icon');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                icon.className = 'fa-solid fa-xmark text-lg';
+            } else {
+                menu.classList.add('hidden');
+                icon.className = 'fa-solid fa-bars text-lg';
+            }
+        }
+
+        // Copy Email to clipboard fallback
+        function copyEmailToClipboard() {
+            const fakeInput = document.createElement('input');
+            fakeInput.value = "b152510294@student.utem.edu.my";
+            document.body.appendChild(fakeInput);
+            fakeInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(fakeInput);
+            playSuccessChime();
+            alert('Ahmad\'s email address has been copied to your clipboard!');
+        }
+    </script>
+
+    <script>
+        function renderAcademicChart() {
+            // Prevent multiple initializations that corrupt canvas context
+            if (gpaChartObj) {
+                gpaChartObj.destroy();
+            }
+            const ctx = document.getElementById('gpaChart').getContext('2d');
+            
+            // Render beautiful gradient fill for Chart
+            let primaryGradient = ctx.createLinearGradient(0, 0, 0, 200);
+            primaryGradient.addColorStop(0, 'rgba(79, 70, 229, 0.4)');
+            primaryGradient.addColorStop(1, 'rgba(79, 70, 229, 0)');
+
+            gpaChartObj = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
+                    datasets: [{
+                        label: 'GPA Score',
+                        data: [3.82, 3.86, 3.90, 3.95],
+                        borderColor: '#4F46E5',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#06B6D4',
+                        pointBorderColor: '#FFF',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        backgroundColor: primaryGradient,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 3.5,
+                            max: 4.0,
+                            ticks: {
+                                stepSize: 0.1
+                            },
+                            grid: {
+                                color: 'rgba(148, 163, 184, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+
+    <script>
+        // Projects Specifications Mock Database
+        const projectSpecs = {
+            1: {
+                title: "Secure Network Design using Cisco Packet Tracer",
+                image: "https://placehold.co/600x400/0f172a/6366f1?text=Cisco+Packet+Tracer",
+                Description: "Designed and simulated a secure network infrastructure using VLAN segmentation, routing configuration, and basic security implementation.",
+                Tags: "Cisco Packet Tracer, Networking, VLAN, Security"
+            },
+            2: {
+                title: "Network Traffic Analysis using Wireshark",
+                image: "https://placehold.co/600x400/0f172a/06b6d4?text=Wireshark",
+                Description: "Captured and analysed network packets to study communication protocols, identify abnormal traffic behaviour and improve troubleshooting skills.",
+                Tags: "Wireshark, Packet Analysis, Networking"
+            },
+            3: {
+                title: "Virtual Cybersecurity Lab Setup",
+                image: "https://placehold.co/600x400/0f172a/f59e0b?text=Virtual+Cybersecurity",
+                Description: "Built a cybersecurity practice environment using Kali Linux, VirtualBox and multiple virtual machines for security testing and learning activities.",
+                Tags: "Kali Linux, VirtualBox, Cyber Lab"
+            },
+            4: {
+                title: "Basic Vulnerability Assessment",
+                image: "https://placehold.co/600x400/0f172a/10b981?text=Basic+Vulnerability+Assessment",
+                Description: "Performed network scanning, service enumeration and vulnerability identification exercises using Nmap and security assessment methodologies.",
+                Tags: "Nmap, Security Assessment, Cybersecurity"
+            }
+        };
+
+        // Filter Grid Logic
+        function filterProjects(category) {
+            // Update filter pill UI states
+            document.querySelectorAll('.filter-pill').forEach(pill => {
+                pill.className = "filter-pill px-4 py-2 text-xs font-bold rounded-full bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all";
+            });
+            const selectedPill = document.getElementById(`filter-${category}`);
+            if (selectedPill) {
+                selectedPill.className = "filter-pill px-4 py-2 text-xs font-bold rounded-full bg-indigo-600 text-white shadow-md shadow-indigo-500/10 transition-all";
+            }
+
+            // Perform DOM filtering of elements
+            document.querySelectorAll('.project-card').forEach(card => {
+                if (category === 'all' || card.getAttribute('data-category') === category) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+
+        // Modal Operations
+        function openProjectModal(id) {
+            const item = projectSpecs[id];
+            if (!item) return;
+
+            document.getElementById('modal-title').textContent = item.title;
+            document.getElementById('modal-image').src = item.image;
+            document.getElementById('modal-hci-description').textContent = item.hci;
+            document.getElementById('modal-tech-description').textContent = item.tech;
+
+            document.getElementById('project-modal').classList.remove('hidden');
+            // Play success celebration confetti
+            confetti({
+                particleCount: 40,
+                spread: 60,
+                origin: { y: 0.8 }
+            });
+        }
+
+        function closeProjectModal() {
+            document.getElementById('project-modal').classList.add('hidden');
+        }
+    </script>
+
+    <script>
+        // Fitts's Law Game Variables
+        let fittsAttempts = 0;
+        let fittsTimestamps = [];
+        let fittsActiveDist = 0;
+        let fittsActiveWidth = 0;
+        let lastFittsClickTime = 0;
+
+        function startFittsBenchmark() {
+            document.getElementById('fitts-intro').classList.add('hidden');
+            document.getElementById('fitts-results').classList.add('hidden');
+            document.getElementById('fitts-target').classList.remove('hidden');
+            fittsAttempts = 0;
+            fittsTimestamps = [];
+            spawnFittsTarget();
+        }
+
+        function spawnFittsTarget() {
+            if (fittsAttempts >= 10) {
+                concludeFittsBenchmark();
+                return;
+            }
+
+            const sandbox = document.getElementById('fitts-sandbox');
+            const target = document.getElementById('fitts-target');
+            
+            // Randomly configure target physical size (W) from 20px to 60px
+            const width = Math.floor(Math.random() * 40) + 20;
+            fittsActiveWidth = width;
+
+            // Random position limits inside frame
+            const maxLeft = sandbox.clientWidth - width - 10;
+            const maxTop = sandbox.clientHeight - width - 10;
+            
+            const randomLeft = Math.floor(Math.random() * maxLeft);
+            const randomTop = Math.floor(Math.random() * maxTop);
+
+            // Compute distance from previous hypothetical position
+            // (Simply utilizing position coordinates offset for simplicity)
+            fittsActiveDist = Math.floor(Math.sqrt(Math.pow(randomLeft, 2) + Math.pow(randomTop, 2)));
+
+            // Apply modifications to UI
+            target.style.width = `${width}px`;
+            target.style.height = `${width}px`;
+            target.style.left = `${randomLeft}px`;
+            target.style.top = `${randomTop}px`;
+
+            lastFittsClickTime = performance.now();
+        }
+
+        function registerFittsHit() {
+            const hitTime = performance.now();
+            const elapsed = hitTime - lastFittsClickTime;
+            
+            // Log interaction parameters
+            fittsTimestamps.push({
+                time: elapsed,
+                distance: fittsActiveDist,
+                width: fittsActiveWidth
+            });
+
+            // Increment benchmark progress
+            fittsAttempts++;
+            playUIPing(400 + (fittsAttempts * 60), 0.08, 'sine');
+            spawnFittsTarget();
+        }
+
+        function concludeFittsBenchmark() {
+            document.getElementById('fitts-target').classList.add('hidden');
+            document.getElementById('fitts-results').classList.remove('hidden');
+
+            // Compute statistics
+            let sumTime = 0;
+            let sumThroughput = 0;
+
+            fittsTimestamps.forEach(record => {
+                sumTime += record.time;
+                // Calculate Index of Difficulty ID = log2((2 * D) / W)
+                const id = Math.log2((2 * record.distance) / record.width);
+                // Throughput = ID / MT (in seconds)
+                const mtSec = record.time / 1000;
+                sumThroughput += (id / mtSec);
+            });
+
+            const avgTime = Math.round(sumTime / fittsTimestamps.length);
+            const avgThroughput = (sumThroughput / fittsTimestamps.length).toFixed(2);
+
+            document.getElementById('fitts-result-speed').textContent = `${avgTime} ms`;
+            document.getElementById('fitts-result-throughput').textContent = `${avgThroughput} bits/s`;
+
+            confetti({
+                particleCount: 80,
+                spread: 80,
+                colors: ['#F59E0B', '#10B981']
+            });
+        }
+
+        function resetFittsBenchmark() {
+            document.getElementById('fitts-results').classList.add('hidden');
+            document.getElementById('fitts-intro').classList.remove('hidden');
+        }
+
+        // Live WCAG Contrast auditor formula math
+        function hexToRgb(hex) {
+            const bigint = parseInt(hex.replace('#', ''), 16);
+            return {
+                r: (bigint >> 16) & 255,
+                g: (bigint >> 8) & 255,
+                b: bigint & 255
+            };
+        }
+
+        function getLuminance(r, g, b) {
+            const a = [r, g, b].map(v => {
+                v /= 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            });
+            return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+        }
+
+        function auditContrast() {
+            const fgHex = document.getElementById('contrast-text').value;
+            const bgHex = document.getElementById('contrast-bg').value;
+
+            document.getElementById('contrast-text-hex').textContent = fgHex.toUpperCase();
+            document.getElementById('contrast-bg-hex').textContent = bgHex.toUpperCase();
+
+            // Update realtime demo box
+            const preview = document.getElementById('contrast-preview');
+            preview.style.color = fgHex;
+            preview.style.backgroundColor = bgHex;
+            preview.style.borderColor = fgHex;
+
+            // Perform Math calculations
+            const fgRgb = hexToRgb(fgHex);
+            const bgRgb = hexToRgb(bgHex);
+
+            const fgLuminance = getLuminance(fgRgb.r, fgRgb.g, fgRgb.b);
+            const bgLuminance = getLuminance(bgRgb.r, bgRgb.g, bgRgb.b);
+
+            const brightest = Math.max(fgLuminance, bgLuminance);
+            const darkest = Math.min(fgLuminance, bgLuminance);
+            
+            const ratio = ((brightest + 0.05) / (darkest + 0.05)).toFixed(2);
+
+            document.getElementById('contrast-ratio-value').textContent = `${ratio} : 1`;
+
+            // Evaluate statuses
+            const aaPass = ratio >= 4.5;
+            const aaaPass = ratio >= 7.0;
+
+            const aaLabel = document.getElementById('contrast-status-aa');
+            const aaaLabel = document.getElementById('contrast-status-aaa');
+
+            if (aaPass) {
+                aaLabel.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300";
+                aaLabel.textContent = "PASS";
+            } else {
+                aaLabel.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300";
+                aaLabel.textContent = "FAIL";
+            }
+
+            if (aaaPass) {
+                aaaLabel.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300";
+                aaaLabel.textContent = "PASS";
+            } else {
+                aaaLabel.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300";
+                aaaLabel.textContent = "FAIL";
+            }
+        }
+
+        // Gestalt Visualizers adjustments
+        let proximityShiftState = false;
+        function toggleGestaltProximity() {
+            const container = document.getElementById('gestalt-proximity-container');
+            proximityShiftState = !proximityShiftState;
+            if (proximityShiftState) {
+                container.className = "flex gap-1 transition-all duration-300";
+            } else {
+                container.className = "flex gap-2 transition-all duration-300";
+            }
+        }
+
+        let similarityShiftState = false;
+        function toggleGestaltSimilarity() {
+            const container = document.getElementById('gestalt-similarity-container');
+            similarityShiftState = !similarityShiftState;
+            const circles = container.querySelectorAll('span');
+            if (similarityShiftState) {
+                // Change all to identical blue
+                circles.forEach(c => c.className = "w-4 h-4 bg-cyan-500 rounded-full");
+            } else {
+                // Return to alternating blue/slate
+                circles[0].className = "w-4 h-4 bg-cyan-500 rounded-full";
+                circles[1].className = "w-4 h-4 bg-slate-300 rounded-full";
+                circles[2].className = "w-4 h-4 bg-cyan-500 rounded-full";
+                circles[3].className = "w-4 h-4 bg-slate-300 rounded-full";
+            }
+        }
+
+        let closureShiftState = false;
+        function toggleGestaltClosure() {
+            const box = document.getElementById('gestalt-closure-box');
+            closureShiftState = !closureShiftState;
+            if (closureShiftState) {
+                box.className = "w-16 h-16 border-4 border-solid border-indigo-500 rounded-lg relative flex items-center justify-center transition-all";
+            } else {
+                box.className = "w-16 h-16 border-4 border-dashed border-indigo-500 rounded-lg relative flex items-center justify-center transition-all";
+            }
+        }
+    </script>
+
+    <script>
+        // Guestbook Initial mock array
+        let guestbookEntries = [
+            {
+                name: "Dr. Hamdan Bin Aziz",
+                org: "FTMK Usability Lab Panel",
+                msg: "The implementation of the Fitts's Law Target Clicker directly inside the prototype layout shows a wonderful, practical command over modern HCI parameters. Splendid work, Ahmad!",
+                date: "June 2026"
+            },
+            {
+                name: "Sarah Jenkins",
+                org: "GlobalTech Solutions Recruiter",
+                msg: "A highly intuitive layout. The sound-clicks micro-interactions provide incredible reassurance. Perfect visual hierarchy!",
+                date: "May 2026"
+            }
+        ];
+
+        function renderGuestbook() {
+            const feed = document.getElementById('guestbook-feed');
+            feed.innerHTML = '';
+
+            guestbookEntries.forEach(entry => {
+                const item = document.createElement('div');
+                item.className = "p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-2xl space-y-2 hover:shadow-sm transition-all";
+                item.innerHTML = `
+                    <div class="flex items-center justify-between text-xs">
+                        <div>
+                            <span class="font-extrabold text-slate-900 dark:text-white">${escapeHtml(entry.name)}</span>
+                            <span class="text-slate-400 ml-1">(${escapeHtml(entry.org)})</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 font-mono">${escapeHtml(entry.date)}</span>
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic">"${escapeHtml(entry.msg)}"</p>
+                `;
+                feed.appendChild(item);
+            });
+        }
+
+        function submitGuestbookComment(e) {
+            e.preventDefault();
+            const name = document.getElementById('gb-name').value.trim();
+            const org = document.getElementById('gb-org').value.trim() || 'Independent Visitor';
+            const msg = document.getElementById('gb-msg').value.trim();
+
+            if (!name || !msg) return;
+
+            // Push to memory array
+            guestbookEntries.unshift({
+                name: name,
+                org: org,
+                msg: msg,
+                date: "Just Now"
+            });
+
+            // Re-render UI
+            renderGuestbook();
+
+            // Clear inputs
+            document.getElementById('gb-name').value = '';
+            document.getElementById('gb-org').value = '';
+            document.getElementById('gb-msg').value = '';
+
+            // Play celebratory confetti & Success feedback sound
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+            playSuccessChime();
+        }
+
+        // Simple utility to prevent Cross Site Scripting injections in custom guestbook
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+
+    <!-- Window Onload Initializations -->
+    <script>
+        window.onload = function() {
+            // Setup default pages view
+            navigateToPage('home');
+            auditContrast();
+            renderGuestbook();
+        };
+    </script>
+
+</body>
+</html>
